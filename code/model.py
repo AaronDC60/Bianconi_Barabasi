@@ -75,14 +75,20 @@ class network:
         for i in range(m0):
             # Determine the fitness value of the node
             fitness = self.generate_fitness_value()
+            self.graph[i] = [], fitness
+        
+        # Give every node 1 neighbour
+        for i in range(m0):
             # Select a node to link with
             neighbor = np.random.randint(0, m0)
             if neighbor == i:
                 neighbor = (neighbor + 1) % m0 
-            self.graph[i] = [neighbor], fitness
+            self.graph[i][0].append(neighbor)
+            self.graph[neighbor][0].append(i)
 
             # Update the total fitness of the network
-            self.tot_fitness += fitness
+            self.tot_fitness += self.graph[i][1]
+            self.tot_fitness += self.graph[neighbor][1]
     
     def set_m0(self, m0):
         """
@@ -181,3 +187,4 @@ class network:
         
         while len(self.graph) < n:
             self.add_node()
+            
