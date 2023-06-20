@@ -26,21 +26,29 @@ class network:
     -------
     set_up()
         Generate an initial network with m0 nodes.
+    set_m0(m0)
+        Set the value for the number of initial nodes, m0.
+    set_m(m)
+        Set the value for the number of nodes a new node links to, m.
+    set_fitness_distr(distr)
+        Set the type of distribution from which fitness values are generated.
     generate_fitness_value()
         Generate a fitness value from a given distribution.
     add_node()
         Add a new node to the network.
     generate_network(n)
         Generate a network with n nodes.
+    get_degree_distr(n_bins)
+        Get the degree distribution of the network.
     """
-    def __init__(self, m0=5, m=2):
+    def __init__(self, m0=3, m=2):
         """
         Initialize an object of the class network.
 
         Parameters
         ----------
         m0 : int
-            Number of nodes in the network at time zero, default 5
+            Number of nodes in the network at time zero, default 3
         m : int
             Number of nodes each new node links to, default 2
         """
@@ -132,6 +140,9 @@ class network:
         if distr != 'delta' and distr != 'uniform' and distr != 'exponential':
             raise NameError('Unkown distribution, %s, used. Options are "delta", "uniform" or "exponential". '%distr)
         self.fitness_distr = distr
+        # Regenerate the initial network with new fitness distribution
+        self.set_up(self.m0)
+
 
     def generate_fitness_value(self):
         """
@@ -177,6 +188,11 @@ class network:
         ----------
         n : int
             Total number of nodes in the network
+        
+        Returns
+        -------
+        graph : dict
+            The network
         """
         # Check the type of n
         if type(n) != int:
@@ -187,3 +203,36 @@ class network:
         
         while len(self.graph) < n:
             self.add_node()
+        return self.graph
+
+    def get_degree_distr(self, n_bins = 20):
+        """
+        Get the degree distribution of the network.
+
+        Parameters
+        ----------
+        n_bins : int
+            Number of bins 
+
+        Returns
+        -------
+        p_k : numpy.ndarray
+            Probability distribution (y-axis)
+        bin_centers : numpy.ndarray
+            Degrees (x-axis)
+        """
+        # Check the type of n_bins
+        if type(n_bins) != int:
+            raise TypeError('The parameter n_bins should be an integer instead of %s.'%type(n_bins))
+        
+        # Determine the degree of every node (length of the list with neighbours) in the network
+        degree = np.empty(len(self.graph))
+        for node in self.graph.keys():
+            degree[node] = len(self.graph[node][0])
+        
+        # Create the (log)bins
+        log_bins = np.logspace(np.log10(min(degree)), np.log10(max(degree)), num = n_bins)
+        p_k, bin_edges = np.histogram(degree, bins=log_bins, density=True)
+        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+
+        return p_k, bin_centers
