@@ -46,7 +46,7 @@ class network:
         """
         # Check the type of m0 and m
         if type(m0) != int:
-            raise TypeError('The parameter m0 should be an integer instead of %s.'%type(m))
+            raise TypeError('The parameter m0 should be an integer instead of %s.'%type(m0))
         if type(m) != int:
             raise TypeError('The parameter m should be an integer instead of %s.'%type(m))
         
@@ -83,6 +83,49 @@ class network:
 
             # Update the total fitness of the network
             self.tot_fitness += fitness
+    
+    def set_m0(self, m0):
+        """
+        Set the value for the number of initial nodes, m0.
+
+        Parameters
+        ----------
+        m0 : int
+            Number of nodes at time zero
+        """
+        # Check the type of m0
+        if type(m0) != int:
+            raise TypeError('The parameter m0 should be an integer instead of %s.'%type(m0))
+        self.m0 = m0
+        # Regenerate the initial network with new value for m0
+        self.set_up(m0)
+    
+    def set_m(self, m):
+        """
+        Set the value for the number of nodes a new node links to, m.
+
+        Parameters
+        ----------
+        m : int
+            Number of nodes each new node links to
+        """
+        # Check the type of m
+        if type(m) != int:
+            raise TypeError('The parameter m0 should be an integer instead of %s.'%type(m))
+        self.m = m
+    
+    def set_fitness_distr(self, distr):
+        """
+        Set the type of distribution from which fitness values are generated.
+
+        Parameters
+        ----------
+        distr : str
+            Fitness distribution
+        """
+        if distr != 'delta' and distr != 'uniform' and distr != 'exponential':
+            raise NameError('Unkown distribution, %s, used. Options are "delta", "uniform" or "exponential". '%distr)
+        self.fitness_distr = distr
 
     def generate_fitness_value(self):
         """
@@ -94,6 +137,11 @@ class network:
         # Uniform distribution
         elif self.fitness_distr == 'uniform':
             return np.random.uniform()
+        # Exponential distribution
+        elif self.fitness_distr == 'exponential':
+            return np.random.exponential(1)
+        else:
+            raise NameError('Unkown distribution, %s, used. Options are "delta", "uniform" or "exponential". '%self.fitness_distr)
 
     def add_node(self):
         """
