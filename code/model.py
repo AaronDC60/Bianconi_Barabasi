@@ -81,7 +81,7 @@ class network:
         for i in range(m0):
             # Select a node to link with
             neighbor = np.random.randint(0, m0)
-            if neighbor == i:
+            while neighbor == i or neighbor in self.graph[i][0]:
                 neighbor = (neighbor + 1) % m0 
             self.graph[i][0].append(neighbor)
             self.graph[neighbor][0].append(i)
@@ -187,4 +187,3 @@ class network:
         
         while len(self.graph) < n:
             self.add_node()
-            
