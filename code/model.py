@@ -89,14 +89,17 @@ class network:
         for i in range(m0):
             # Select a node to link with
             neighbor = np.random.randint(0, m0)
-            while neighbor == i or neighbor in self.graph[i][0]:
-                neighbor = (neighbor + 1) % m0 
-            self.graph[i][0].append(neighbor)
-            self.graph[neighbor][0].append(i)
+            if neighbor == i:
+                # No-self links
+                neighbor = (neighbor + 1) % m0
+            if neighbor not in self.graph[i][0]:
+                # Only creat a link if it doesn't already exist
+                self.graph[i][0].append(neighbor)
+                self.graph[neighbor][0].append(i)
 
-            # Update the total fitness of the network
-            self.tot_fitness += self.graph[i][1]
-            self.tot_fitness += self.graph[neighbor][1]
+                # Update the total fitness of the network
+                self.tot_fitness += self.graph[i][1]
+                self.tot_fitness += self.graph[neighbor][1]
     
     def set_m0(self, m0):
         """
