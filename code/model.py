@@ -208,6 +208,28 @@ class network:
             self.add_node()
         return self.graph
 
+    def generate_network_2(self, n):
+
+        degrees = [[] for _ in range(n - 3)]
+
+        # Check the type of n
+        if type(n) != int:
+            raise TypeError('The parameter n should be an integer instead of %s.'%type(n))
+        # n should be larger than m0
+        if n < self.m0:
+            raise ValueError('Total number of nodes (%s) cannot be smaller than m0 (%s)'%(n, self.m0))
+        
+        j = 0
+        while len(self.graph) < n:
+
+            for node in self.graph.keys():
+                    degrees[j].append(len(self.graph[node][0]))
+                    
+            j += 1
+            self.add_node()
+
+        return self.graph, degrees
+
     def get_degree_distr(self, n_bins = 20):
         """
         Get the degree distribution of the network.
