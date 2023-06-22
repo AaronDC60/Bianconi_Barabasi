@@ -39,6 +39,8 @@ class network:
         Add a new node to the network.
     generate_network(n)
         Generate a network with n nodes.
+    get_largest_node()
+        Get the node ID of the node with the highest degree.
     get_degree_distr(n_bins)
         Get the degree distribution of the network.
     """
@@ -189,6 +191,64 @@ class network:
         while len(self.graph) < n:
             self.add_node()
         return self.graph
+
+    def get_largest_node(self):
+        """
+        Get the node ID of the node with the highest degree.
+
+        Returns
+        -------
+        node_id : int
+            ID of the node with the highest degree
+        """
+        node_id = 0
+        # Run over all the node in the network and check which one has the most neighbours
+        for node in self.graph.keys():
+            if len(self.graph[node][0]) > len(self.graph[node_id][0]):
+                node_id = node
+        return node_id
+
+    def get_degree_wrt_time(self, node):
+        """
+        Get the degree of a node at every point in time.
+
+        Parameters
+        ----------
+        node : int
+            ID of the node for which the change degree should be returned
+        
+        Returns
+        -------
+        k_t : numpy.ndarray
+            Array with the degree of the node at every point in time
+        t : numpy.ndarray
+            Array with timepoint that match k_t
+        """
+        # Check if the node variable is an integer
+        if type(node) != int:
+            raise TypeError('The parameter node should be an integer, not %s.'%type(node))
+        # Check if the node id exists
+        if node >= len(self.graph):
+            raise ValueError('Given node ID does not exist.')
+        
+        # Create array with all the timesteps from at which the node exists
+        # First m0 nodes are created at t=0
+        # Last timestep is the total number of nodes minus m0 because 1 node added per timestep
+        t = np.arange(max(0, node - self.m0 + 1), len(self.graph) - self.m0 + 1)
+        k_t = np.zeros(len(t))
+
+        # Loop over all neighbours to determine when the degree changed
+        for neighbor in self.graph[node][0]:
+            # Time at which the neighbour was created
+            time = max(0, neighbor - self.m0 + 1)
+            if time < t[0]:
+                # Neighbour was created earlier, this is one of the m links created at the first timestep
+                # Increase degree at every timestep
+                k_t += 1
+            else:
+                # Increase degee from when the neighbour linked to this node
+                k_t[time-t[0]:] += 1
+        return k_t, t
 
     def get_degree_distr(self, n_bins = 20):
         """

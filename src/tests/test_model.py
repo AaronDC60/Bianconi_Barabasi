@@ -2,7 +2,6 @@
 
 # Imports
 import pytest
-#import model
 from src import model
 
 def check_connections(network):
@@ -100,3 +99,61 @@ def test_generate_network():
     
     check_connections(network)
     check_fitness(network)
+
+def test_finding_largest_node():
+    """
+    Check if the function indeed returns the node with the highest degree.
+    """
+    # Generate a network
+    network = model.network()
+    network.set_fitness_distr('uniform')
+    network.generate_network(1000)
+
+    largest_node = network.get_largest_node()
+
+    for node in network.graph.keys():
+        if node != largest_node:
+            # degree should be lower or equal
+            assert(len(network.graph[node][0]) <= len(network.graph[largest_node][0]))
+        else:
+            # degree should be the same
+            assert(len(network.graph[node][0]) == len(network.graph[largest_node][0]))
+
+def test_degree_wrt_time():
+    """
+    Check the degree as a function of time.
+    """
+    n = 1000
+    # Generate a network
+    network = model.network()
+    network.set_fitness_distr('uniform')
+    network.generate_network(n)
+
+    # Expected errors
+    with pytest.raises(TypeError):
+        network.get_degree_wrt_time(1.5)
+    with pytest.raises(ValueError):
+        network.get_degree_wrt_time(2000)
+    
+    # Check degree as a function of time for the m0 nodes
+    for i in range(network.m0):
+        k_t, t = network.get_degree_wrt_time(i)
+        # First timestep should be 0
+        assert(t[0] == 0)
+        # Last timestep should be n-m0
+        assert(t[-1] == n - network.m0)
+        # Final degree should be the total number of neighbours
+        assert(k_t[-1] == len(network.graph[i][0]))
+    
+    # Check another node that was created later
+    id = 10
+    k_t, t = network.get_degree_wrt_time(id)
+    # First timestep should be id - m0
+    assert(t[0] == id - network.m0 + 1)
+    # Last timestep should be n-m0
+    assert(t[-1] == n - network.m0)
+    # First degree should be m
+    assert(k_t[0] == network.m)
+    # Final degree should be the total number of neighbours
+    assert(k_t[-1] == len(network.graph[id][0]))
+    
