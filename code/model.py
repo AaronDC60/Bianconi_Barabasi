@@ -1,7 +1,8 @@
-"""Module that contains the code for the Bianconi-Barabasi model."""
+"""File that contains the code for the Bianconi-Barabasi model."""
 
 # Imports
 import numpy as np
+import fitness
 
 class network:
     """
@@ -19,8 +20,8 @@ class network:
         Number of nodes each new node links to
     tot_fitness : float
         Sum of the fitness multiplied with the degree for every node
-    fitness_distr : str
-        Distribution from which the fitness values are generated
+    generator : src.fitness.generator
+        Object that can generate fitness values from different generators
     
     Methods
     -------
@@ -38,6 +39,8 @@ class network:
         Add a new node to the network.
     generate_network(n)
         Generate a network with n nodes.
+    get_largest_node()
+        Get the node ID of the node with the highest degree.
     get_degree_distr(n_bins)
         Get the degree distribution of the network.
     """
@@ -60,7 +63,7 @@ class network:
         
         # Fitness
         self.tot_fitness = 0
-        self.fitness_distr = 'uniform'
+        self.generator = fitness.generator()
 
         # Graph
         self.m0 = m0
@@ -69,7 +72,7 @@ class network:
         # Create initial graph
         self.set_up(m0)
 
-    def set_up(self, m0):
+    def set_up(self, m0, from_data = False):
         """
         Generate an initial network with m0 nodes.
 
@@ -80,11 +83,18 @@ class network:
         """
         self.tot_fitness = 0
         self.graph = {}
-        for i in range(m0):
-            # Determine the fitness value of the node
-            fitness = self.generate_fitness_value()
-            self.graph[i] = [], fitness
-        
+
+        if from_data:
+            for i in range(m0):
+                # Determine the fitness value of the node
+                fitness = self.generator.fitness_data[i]
+                self.graph[i] = [], fitness
+        else:
+            for i in range(m0):
+                # Determine the fitness value of the node
+                fitness = self.generator.generate_value()
+                self.graph[i] = [], fitness
+
         # Give every node 1 neighbour
         for i in range(m0):
             # Select a node to link with
@@ -140,28 +150,14 @@ class network:
         distr : str
             Fitness distribution
         """
-        if distr != 'delta' and distr != 'uniform' and distr != 'exponential':
-            raise NameError('Unkown distribution, %s, used. Options are "delta", "uniform" or "exponential". '%distr)
-        self.fitness_distr = distr
+        self.generator.set_current_distribution(distr)
         # Regenerate the initial network with new fitness distribution
         self.set_up(self.m0)
 
-
-    def generate_fitness_value(self):
+    def set_fitness_from_data(self, data):
         """
-        Generate a fitness value from a given distribution.
         """
-        # Delta distribution
-        if self.fitness_distr == 'delta':
-            return 1
-        # Uniform distribution
-        elif self.fitness_distr == 'uniform':
-            return np.random.uniform()
-        # Exponential distribution
-        elif self.fitness_distr == 'exponential':
-            return np.random.exponential(1)
-        else:
-            raise NameError('Unkown distribution, %s, used. Options are "delta", "uniform" or "exponential". '%self.fitness_distr)
+        self.generator.fitness_data = data
 
     def add_node(self):
         """
@@ -169,7 +165,8 @@ class network:
         """
         # Determine the fitness value of the new node
         node_id = len(self.graph)
-        fitness = self.generate_fitness_value()
+        fitness = self.generator.generate_value()
+
         # Construct the pdf of the network
         pdf = [(self.graph[i][1] * len(self.graph[i][0]))/self.tot_fitness for i in self.graph.keys()]
 
@@ -183,7 +180,34 @@ class network:
             self.graph[node][0].append(node_id)
             self.tot_fitness += self.graph[node][1]
 
-    def generate_network(self, n):
+    def add_node_from_data(self):
+        """
+        Add a new node to the network from a data with fitness distribution.
+        """
+        # Determine the fitness value of the new node
+        node_id = len(self.graph)
+        fitness = self.generator.fitness_data[node_id]
+
+        #print(self.graph)
+
+        #print(np.sum(self.tot_fitness))
+        # Construct the pdf of the network
+        pdf = [(self.graph[i][1] * len(self.graph[i][0]))/self.tot_fitness for i in self.graph.keys()]
+
+        #print(pdf)
+
+        # Determine the nodes to which the new node will link
+        neighbors = np.random.choice(list(self.graph.keys()), self.m, replace=False, p=pdf)
+        
+        # Add new node to the network
+        self.tot_fitness += (self.m * fitness)
+        self.graph[node_id] = list(neighbors), fitness
+        for node in neighbors:
+            self.graph[node][0].append(node_id)
+            self.tot_fitness += self.graph[node][1]
+
+
+    def generate_network(self, n, from_data = False):
         """
         Generate a network with n nodes.
 
@@ -203,32 +227,73 @@ class network:
         # n should be larger than m0
         if n < self.m0:
             raise ValueError('Total number of nodes (%s) cannot be smaller than m0 (%s)'%(n, self.m0))
+
+        if from_data:
+            while len(self.graph) < n:
+                self.add_node_from_data()
+        else:
+            while len(self.graph) < n:
+                self.add_node()
         
-        while len(self.graph) < n:
-            self.add_node()
         return self.graph
 
-    def generate_network_2(self, n):
+    def get_largest_node(self):
+        """
+        Get the node ID of the node with the highest degree.
 
-        degrees = [[] for _ in range(n - 3)]
+        Returns
+        -------
+        node_id : int
+            ID of the node with the highest degree
+        """
+        node_id = 0
+        # Run over all the node in the network and check which one has the most neighbours
+        for node in self.graph.keys():
+            if len(self.graph[node][0]) > len(self.graph[node_id][0]):
+                node_id = node
+        return node_id
 
-        # Check the type of n
-        if type(n) != int:
-            raise TypeError('The parameter n should be an integer instead of %s.'%type(n))
-        # n should be larger than m0
-        if n < self.m0:
-            raise ValueError('Total number of nodes (%s) cannot be smaller than m0 (%s)'%(n, self.m0))
+    def get_degree_wrt_time(self, node):
+        """
+        Get the degree of a node at every point in time.
+
+        Parameters
+        ----------
+        node : int
+            ID of the node for which the change degree should be returned
         
-        j = 0
-        while len(self.graph) < n:
+        Returns
+        -------
+        k_t : numpy.ndarray
+            Array with the degree of the node at every point in time
+        t : numpy.ndarray
+            Array with timepoint that match k_t
+        """
+        # Check if the node variable is an integer
+        if type(node) != int:
+            raise TypeError('The parameter node should be an integer, not %s.'%type(node))
+        # Check if the node id exists
+        if node >= len(self.graph):
+            raise ValueError('Given node ID does not exist.')
+        
+        # Create array with all the timesteps from at which the node exists
+        # First m0 nodes are created at t=0
+        # Last timestep is the total number of nodes minus m0 because 1 node added per timestep
+        t = np.arange(max(0, node - self.m0 + 1), len(self.graph) - self.m0 + 1)
+        k_t = np.zeros(len(t))
 
-            for node in self.graph.keys():
-                    degrees[j].append(len(self.graph[node][0]))
-                    
-            j += 1
-            self.add_node()
-
-        return self.graph, degrees
+        # Loop over all neighbours to determine when the degree changed
+        for neighbor in self.graph[node][0]:
+            # Time at which the neighbour was created
+            time = max(0, neighbor - self.m0 + 1)
+            if time < t[0]:
+                # Neighbour was created earlier, this is one of the m links created at the first timestep
+                # Increase degree at every timestep
+                k_t += 1
+            else:
+                # Increase degee from when the neighbour linked to this node
+                k_t[time-t[0]:] += 1
+        return k_t, t
 
     def get_degree_distr(self, n_bins = 20):
         """
