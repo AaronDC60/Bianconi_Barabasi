@@ -74,7 +74,7 @@ class generator:
         """
         # Check if the variable is an integer or a float
         if type(rate) !=  int and type(rate) != float:
-            raise TypeError('Invalid type for the variable rate, %s. Expected int or float.'%type(rate))
+            raise TypeError('Invalid type for the variable rate, %s. Expected int or float.'%type(rate).__name__)
         # Check if the variable is positive
         if rate < 0:
             raise ValueError('The rate should be a non-negative value.')
@@ -91,7 +91,7 @@ class generator:
         """
         # Check if the variable is an integer or a float
         if type(rate) !=  int and type(rate) != float:
-            raise TypeError('Invalid type for the variable rate, %s. Expected int or float.'%type(rate))
+            raise TypeError('Invalid type for the variable rate, %s. Expected int or float.'%type(rate).__name__)
         # Check if the variable is positive
         if rate < 0:
             raise ValueError('The variable should be a non-negative value.')
@@ -110,9 +110,9 @@ class generator:
         """
         # Check if the variables are integers or floats
         if type(a) !=  int and type(a) != float:
-            raise TypeError('Invalid type for the variable a, %s. Expected int or float.'%type(a))
+            raise TypeError('Invalid type for the variable a, %s. Expected int or float.'%type(a).__name__)
         if type(b) !=  int and type(b) != float:
-            raise TypeError('Invalid type for the variable b, %s. Expected int or float.'%type(b))
+            raise TypeError('Invalid type for the variable b, %s. Expected int or float.'%type(b).__name__)
         # Check if the variables are positive
         if a < 0:
             raise ValueError('The variable, a, should be a non-negative value.')
@@ -132,7 +132,7 @@ class generator:
         """
         # Check if the variable is an integer or a float
         if type(theta) !=  int and type(theta) != float:
-            raise TypeError('Invalid type for the variable theta, %s. Expected int or float.'%type(theta))
+            raise TypeError('Invalid type for the variable theta, %s. Expected int or float.'%type(theta).__name__)
         # Check if the variable is positive
         if theta < 0:
             raise ValueError('The variable should be a non-negative value.')
@@ -194,7 +194,7 @@ class generator:
             Value sampled from a beta distribution
         """
         return np.random.beta(self.a, self.b)
-    
+
     def from_be(self):
         """
         Sample value from distribution used to get BE condensation.
@@ -238,7 +238,7 @@ class generator:
         """
         # Check if x is an integer or a float
         if type(x) !=  int and type(x) != float:
-            raise TypeError('Invalid type for x, %s. Expected int or float.'%type(x))
+            raise TypeError('Invalid type for x, %s. Expected int or float.'%type(x).__name__)
         return (1 + self.theta) * (1 - x)**self.theta
     
     def generate_value(self):
