@@ -52,7 +52,7 @@ class generator:
         Initialize a object that can generate fitness values from different distributions.
         """
         self.current_distribution = 'delta'
-        self.distributions = ['delta', 'uniform', 'exponential', 'poisson', 'beta', 'be']
+        self.distributions = ['delta', 'uniform', 'exponential', 'poisson', 'beta', 'be', 'data']
         # Parameter (rate) for exponential distribution
         self.rate_exp = 1
         # Parameter (expected number of events in a time-interval) for poisson distribution
@@ -64,6 +64,8 @@ class generator:
         self.theta = 1
 
         self.fitness_data = []
+
+        
     
     def set_param_exp(self, rate):
         """
@@ -76,7 +78,7 @@ class generator:
         """
         # Check if the variable is an integer or a float
         if type(rate) !=  int and type(rate) != float:
-            raise TypeError('Invalid type for the variable rate, %s. Expected int or float.'%type(rate))
+            raise TypeError('Invalid type for the variable rate, %s. Expected int or float.'%type(rate).__name__)
         # Check if the variable is positive
         if rate < 0:
             raise ValueError('The rate should be a non-negative value.')
@@ -93,7 +95,7 @@ class generator:
         """
         # Check if the variable is an integer or a float
         if type(rate) !=  int and type(rate) != float:
-            raise TypeError('Invalid type for the variable rate, %s. Expected int or float.'%type(rate))
+            raise TypeError('Invalid type for the variable rate, %s. Expected int or float.'%type(rate).__name__)
         # Check if the variable is positive
         if rate < 0:
             raise ValueError('The variable should be a non-negative value.')
@@ -112,9 +114,9 @@ class generator:
         """
         # Check if the variables are integers or floats
         if type(a) !=  int and type(a) != float:
-            raise TypeError('Invalid type for the variable a, %s. Expected int or float.'%type(a))
+            raise TypeError('Invalid type for the variable a, %s. Expected int or float.'%type(a).__name__)
         if type(b) !=  int and type(b) != float:
-            raise TypeError('Invalid type for the variable b, %s. Expected int or float.'%type(b))
+            raise TypeError('Invalid type for the variable b, %s. Expected int or float.'%type(b).__name__)
         # Check if the variables are positive
         if a < 0:
             raise ValueError('The variable, a, should be a non-negative value.')
@@ -134,7 +136,7 @@ class generator:
         """
         # Check if the variable is an integer or a float
         if type(theta) !=  int and type(theta) != float:
-            raise TypeError('Invalid type for the variable theta, %s. Expected int or float.'%type(theta))
+            raise TypeError('Invalid type for the variable theta, %s. Expected int or float.'%type(theta).__name__)
         # Check if the variable is positive
         if theta < 0:
             raise ValueError('The variable should be a non-negative value.')
@@ -152,7 +154,7 @@ class generator:
         if distr not in self.distributions:
             raise NameError('Unkown distribution, %s, used. Options are %s.'%(distr, self.distributions))
         self.current_distribution = distr
-
+    
     def from_uniform(self):
         """
         Sample value from uniform distribution.
@@ -196,7 +198,7 @@ class generator:
             Value sampled from a beta distribution
         """
         return np.random.beta(self.a, self.b)
-    
+
     def from_be(self):
         """
         Sample value from distribution used to get BE condensation.
@@ -223,6 +225,13 @@ class generator:
             if u <= self.func_be(y) / c:
                 # Accept Y and stop
                 return y
+            
+    def from_data(self):
+        """
+        """
+        x = self.fitness_data[0]
+        self.fitness_data = np.delete(self.fitness_data, 0)
+        return x
 
     def func_be(self, x):
         """
@@ -240,10 +249,10 @@ class generator:
         """
         # Check if x is an integer or a float
         if type(x) !=  int and type(x) != float:
-            raise TypeError('Invalid type for x, %s. Expected int or float.'%type(x))
+            raise TypeError('Invalid type for x, %s. Expected int or float.'%type(x).__name__)
         return (1 + self.theta) * (1 - x)**self.theta
     
-    def generate_value(self, position = None):
+    def generate_value(self):
         """
         Sample value from current distribution.
 
