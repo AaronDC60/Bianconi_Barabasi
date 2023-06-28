@@ -9,7 +9,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import imageio
 
-import fitness2 as fitness
+import fitness
 
 class network:
     """
