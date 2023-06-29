@@ -29,6 +29,8 @@ class network:
         Sum of the fitness multiplied with the degree for every node
     generator : src.fitness.generator
         Object that can generate fitness values from different generators
+    degree : list
+        List with the degree of every node (at the end)
     
     Methods
     -------
@@ -83,6 +85,7 @@ class network:
         self.m0 = m0
         self.m = m
         self.graph = {}
+        self.degree = []
         # Create initial graph
         self.set_up(m0)
 
@@ -119,7 +122,27 @@ class network:
                 # Update the total fitness of the network
                 self.tot_fitness += self.graph[i][1]
                 self.tot_fitness += self.graph[neighbor][1]
-    
+
+    def set_graph(self, graph):
+        """
+        Set the graph object to an already generated graph.
+
+        Parameters
+        ----------
+        graph : dict
+            Dictionary that represents the network
+        """
+        if type(graph) != dict:
+            raise TypeError('The variable graph should be a dictionary instead of %s.'%type(graph).__name__)
+        self.graph = graph
+        # Get the degree list and list with fitness values
+        self.fitness_values = []
+        self.degree = []
+
+        for node in self.graph.keys():
+            self.degree.append(len(self.graph[node][0]))
+            self.fitness_values.append(self.graph[node][1])
+
     def set_m0(self, m0):
         """
         Set the value for the number of initial nodes, m0.
@@ -207,6 +230,9 @@ class network:
         
         while len(self.graph) < n:
             self.add_node()
+        
+        for node in self.graph.keys():
+            self.degree.append(len(self.graph[node][0]))
         return self.graph
 
     def get_largest_node(self):
@@ -343,6 +369,9 @@ class network:
         time_steps : int, default 200
             Number of timesteps for which the network evolution should be made
         """
+        # IDs of the largest nodes
+        hubs = np.argsort(self.degree)[-5:]
+
         # Check if the time_steps parameter is an integer
         if type(time_steps) != int:
             raise TypeError('The parameter time_steps should be an integer instead of %s.'%type(time_steps).__name__)
@@ -363,10 +392,10 @@ class network:
 
         # Plot graph at t=0
         fig = plt.figure(figsize=(8, 6))
-        nx.draw(G, pos=pos, with_labels=True, node_color=self.fitness_values[:self.m0], cmap='coolwarm')
-        plt.savefig('tmp/image_' + str(self.m0 -1) + '.png')
+        nx.draw(G, pos=pos, with_labels=True, node_color=self.fitness_values[:self.m0],\
+                 cmap='coolwarm', vmin=min(self.fitness_values[:time_steps]), vmax=max(self.fitness_values[:time_steps]), edge_color='gray', alpha=0.7)
+        plt.savefig('tmp/image_' + str(self.m0 -1) + '.png', dpi=300)
         plt.close(fig)
-
 
         for i in range(self.m0, time_steps + self.m0):
             # Add node
@@ -384,21 +413,29 @@ class network:
             # Extract node sizes based on degrees
             node_sizes = [50 * node_degrees[node] for node in G.nodes()]
 
+            # Label only for the largest nodes
+            labels_dict = {}
+            for node in G.nodes():
+                if node in hubs:
+                    labels_dict[node] = str(node)
+                else:
+                    labels_dict[node] = ''
+
             # Draw the graph at time=i
             fig = plt.figure(figsize=(8, 6))
-            nx.draw(G, pos, with_labels=True, node_size=node_sizes, node_color=self.fitness_values[:i+1],\
-                     cmap='coolwarm', vmin=min(self.fitness_values), vmax=max(self.fitness_values), edge_color='gray', alpha=0.7)
+            nx.draw(G, pos, labels=labels_dict, with_labels=True, node_size=node_sizes, node_color=self.fitness_values[:i+1],\
+                     cmap='coolwarm', vmin=min(self.fitness_values[:time_steps]), vmax=max(self.fitness_values[:time_steps]), edge_color='gray', alpha=0.7)
             # Store image in temporary directory
-            plt.savefig('tmp/image_' + str(i) + '.png')
+            plt.savefig('tmp/image_' + str(i) + '.png', dpi=300)
             plt.close(fig)
         
         # Make gif
         frames = []
-        for i in range(self.m0 - 1, time_steps + self.m0):
+        for i in range(self.m0 - 1, time_steps + self.m0, 5):
             image = imageio.v2.imread(f'tmp/image_'+ str(i) + '.png')
             frames.append(image)
 
         # Save gif
-        imageio.mimsave(filename, frames, duration = 500)
+        imageio.mimsave(filename, frames, duration = 400)
         # Delete temporary directory
         shutil.rmtree('tmp')
