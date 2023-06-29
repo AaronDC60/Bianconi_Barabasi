@@ -119,6 +119,39 @@ class network:
                 # Update the total fitness of the network
                 self.tot_fitness += self.graph[i][1]
                 self.tot_fitness += self.graph[neighbor][1]
+
+
+    def set_up_from_data(self, m0):
+        """
+        Generate an initial network with m0 nodes with fixed fitness distribution from data.
+
+        Parameters
+        ----------
+        m0 : int
+            Number of nodes at time zero
+        """
+        self.graph = {}
+
+        for i in range(m0):
+            # Determine the fitness value of the node
+            fitness = self.generator.fitness_data[i]
+            self.graph[i] = [], fitness
+
+        # Give every node 1 neighbour
+        for i in range(m0):
+            # Select a node to link with
+            neighbor = np.random.randint(0, m0)
+            if neighbor == i:
+                # No-self links
+                neighbor = (neighbor + 1) % m0
+            if neighbor not in self.graph[i][0]:
+                # Only creat a link if it doesn't already exist
+                self.graph[i][0].append(neighbor)
+                self.graph[neighbor][0].append(i)
+
+                # Update the total fitness of the network
+                self.tot_fitness += self.graph[i][1]
+                self.tot_fitness += self.graph[neighbor][1]
     
     def set_m0(self, m0):
         """
@@ -184,6 +217,33 @@ class network:
             self.graph[node][0].append(node_id)
             self.tot_fitness += self.graph[node][1]
 
+    def add_node_from_data(self):
+        """
+        Add a new node to the network from a data with fitness distribution.
+        """
+        # Determine the fitness value of the new node
+        node_id = len(self.graph)
+        fitness = self.generator.fitness_data[node_id]
+
+        #print(self.graph)
+
+        #print(np.sum(self.tot_fitness))
+        # Construct the pdf of the network
+        pdf = [(self.graph[i][1] * len(self.graph[i][0]))/self.tot_fitness for i in self.graph.keys()]
+
+        #print(pdf)
+
+        # Determine the nodes to which the new node will link
+        neighbors = np.random.choice(list(self.graph.keys()), self.m, replace=False, p=pdf)
+        
+        # Add new node to the network
+        self.tot_fitness += (self.m * fitness)
+        self.graph[node_id] = list(neighbors), fitness
+        for node in neighbors:
+            self.graph[node][0].append(node_id)
+            self.tot_fitness += self.graph[node][1]
+
+
     def generate_network(self, n):
         """
         Generate a network with n nodes.
@@ -207,6 +267,32 @@ class network:
         
         while len(self.graph) < n:
             self.add_node()
+        return self.graph
+    
+    def generate_network_from_data(self, n):
+        """
+        Generate a network with n nodes .
+
+        Parameters
+        ----------
+        n : int
+            Total number of nodes in the network
+        
+        Returns
+        -------
+        graph : dict
+            The network
+        """
+        # Check the type of n
+        if type(n) != int:
+            raise TypeError('The parameter n should be an integer instead of %s.'%type(n))
+        # n should be larger than m0
+        if n < self.m0:
+            raise ValueError('Total number of nodes (%s) cannot be smaller than m0 (%s)'%(n, self.m0))
+
+        while len(self.graph) < n:
+            self.add_node_from_data()
+
         return self.graph
 
     def get_largest_node(self):

@@ -2,8 +2,9 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.stats import linregress
 
-from . import model
+import model
 
 def get_node_degrees(net):
     """
@@ -85,6 +86,9 @@ def get_means(arr):
     """
     Calculate average degrees for all nodes over time for multiple model runs.
 
+    Basically iterates over all degree lists from models and average each nodes' 
+    degree over all model runs for corresponding time points
+    
     Parameters
     ----------
     arr : list
@@ -104,3 +108,36 @@ def get_means(arr):
     means = [[value / len(arr) for value in subarr] for subarr in summ]
 
     return means
+
+def estimate_beta(degrees, times):
+    """
+    Estimates fitness distribution (which theoretically is the same as beta distribution)
+    according to the method from the book
+
+    Parameters
+    ----------
+    degrees : list
+        list with the degree over time for every node for every run
+    times : list
+        list with the time values for corresponding sublists in degrees
+    
+    Returns
+    -------
+    beta : list
+        Sample of estimated beta values
+    """
+    lnk = [np.log(x) for x in degrees]
+    lnt = [np.log(t) for t in times]
+
+    # Estimating betas using linear regression
+    beta = []
+    for i in range(len(lnk)):
+        if len(lnk[i]) < 10:
+            continue
+
+        slope, intercept, _, _, _ = linregress(lnt[i], lnk[i])
+    
+        if slope > 0:
+            beta.append(slope)
+    
+    return beta
