@@ -52,7 +52,7 @@ class generator:
         Initialize a object that can generate fitness values from different distributions.
         """
         self.current_distribution = 'delta'
-        self.distributions = ['delta', 'uniform', 'exponential', 'poisson', 'beta', 'be']
+        self.distributions = ['delta', 'uniform', 'exponential', 'poisson', 'beta', 'be', 'data']
         # Parameter (rate) for exponential distribution
         self.rate_exp = 1
         # Parameter (expected number of events in a time-interval) for poisson distribution
@@ -62,7 +62,10 @@ class generator:
         self.b = 1
         # Parameter for distribution used to get BE condensation
         self.theta = 1
-    
+
+        # List to store 'empirical' fitness values
+        self.fitness_data = []
+
     def set_param_exp(self, rate):
         """
         Set the parameter (rate) for the exponential distribution.
@@ -221,6 +224,16 @@ class generator:
             if u <= self.func_be(y) / c:
                 # Accept Y and stop
                 return y
+            
+    def from_data(self):
+        """
+        Select value from given list of values
+        """
+        if len(self.fitness_data) == 0:
+            raise IndexError('Not enough fitness values given. The fitness_data variable should at least contain as many values as nodes.')
+        x = self.fitness_data[0]
+        self.fitness_data = np.delete(self.fitness_data, 0)
+        return x
 
     def func_be(self, x):
         """
