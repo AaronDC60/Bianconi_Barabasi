@@ -1,0 +1,8 @@
+numpy
+matplotlib
+scipy
+networkx
+imageio
+pytest
+pandas
+powerlaw
